@@ -32,13 +32,13 @@ spec:
             - containerPort: {{ .Values.mysql.port }}
               name: {{ .Values.mysql.name }}
           env:
-            - name: MARIADB_DATABASE
+            - name: MYSQL_DATABASE
               value: {{ .Values.mysql.db | quote }}
-            - name: MARIADB_USER
+            - name: MYSQL_USER
               value: {{ .Values.mysql.user | quote }}
-            - name: MARIADB_PASSWORD
+            - name: MYSQL_PASSWORD
               value: {{ .Values.mysql.password | quote }}
-            - name: MARIADB_ROOT_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
               value: {{ .Values.mysql.rootPassword | quote }}
           volumeMounts:
             - name: mysql-storage
