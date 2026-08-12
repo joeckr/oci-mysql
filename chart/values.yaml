@@ -1,0 +1,19 @@
+mysql:
+  name: mysql
+  app: mysql
+  replicaCount: 1
+  resources: { limits: { cpu: 100m, memory: 200Mi } }
+  image: ghcr.io/joeckr/mysql
+  tag: latest
+  pullPolicy: Always
+  port: 3306
+  db: mysql
+  user: mysql
+  password: changeme
+  rootPassword: really_replaceme
+  storageAccessMode: ReadWriteOnce
+  storageSize: 1Gi
+  storageClass: ""
+
+initSchema:
+  enabled: true

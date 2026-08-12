@@ -1,0 +1,12 @@
+[
+  {
+    "major": "9",
+    "upstream": "9.7",
+    "latest": true
+  },
+  {
+    "major": "8",
+    "upstream": "8.4",
+    "latest": false
+  }
+]

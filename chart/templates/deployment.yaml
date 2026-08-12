@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.mysql.name }}
+  labels:
+    app: {{ .Values.mysql.app }}
+spec:
+  replicas: {{ .Values.mysql.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.mysql.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.mysql.app }}
+    spec:
+      automountServiceAccountToken: false
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+        {{- if .Values.initSchema.enabled }}
+        - name: mysql-schema
+          configMap:
+            name: mysql-schema
+        {{- end }}
+      containers:
+        - name: {{ .Values.mysql.name }}
+          image: "{{ .Values.mysql.image }}:{{ .Values.mysql.tag }}"
+          imagePullPolicy: {{ .Values.mysql.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.mysql.port }}
+              name: {{ .Values.mysql.name }}
+          env:
+            - name: MARIADB_DATABASE
+              value: {{ .Values.mysql.db | quote }}
+            - name: MARIADB_USER
+              value: {{ .Values.mysql.user | quote }}
+            - name: MARIADB_PASSWORD
+              value: {{ .Values.mysql.password | quote }}
+            - name: MARIADB_ROOT_PASSWORD
+              value: {{ .Values.mysql.rootPassword | quote }}
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+            {{- if .Values.initSchema.enabled }}
+            - name: mysql-schema
+              mountPath: /docker-entrypoint-initdb.d/schema.sql
+              subPath: schema.sql
+            {{- end }}

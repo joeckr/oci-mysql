@@ -1,0 +1,11 @@
+{{- if .Values.initSchema.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-schema
+  labels:
+    app: {{ .Values.app }}
+data:
+  schema.sql: |
+    {{ .Files.Get (print "config/schema.sql") | nindent 4 }}
+{{- end }}

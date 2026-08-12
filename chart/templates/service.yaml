@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.mysql.name }}
+  labels:
+    app: {{ .Values.mysql.app }}
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.mysql.port }}
+      targetPort: {{ .Values.mysql.port }}
+      protocol: TCP
+      name: {{ .Values.mysql.name }}
+  selector:
+    app: {{ .Values.mysql.app }}
