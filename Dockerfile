@@ -2,7 +2,7 @@ ARG VERSION=9
 ARG REGISTRY=docker.io/library
 FROM $REGISTRY/mysql:$VERSION-oracle
 
-USER root
+USER 0
 
 ENV MYSQL_DATA_DIR=/var/lib/mysql \
     MYSQL_RUN_DIR=/var/run/mysql \
