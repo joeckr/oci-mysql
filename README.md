@@ -13,13 +13,13 @@ The repository also supports multi-version image builds using GitHub Actions mat
 - **Schema Initialization**: Auto-mounts [`schema.sql`](file:///Users/josephking/Code/oci/oci-mysql/schema.sql) into `/docker-entrypoint-initdb.d/` for automatic first-run database initialization.
 - **Multiple Deployment Options**: Easily deployed via Docker Compose or Helm chart.
 - **Automated CI/CD**: Centralized reusable workflows for linting, security scanning, dry-run PR testing, matrix builds, Helm publishing, and semantic releases.
-- **Local Tooling with mise & prek**: Hermetic developer toolchains and git hooks configured out of the box.
+- **Local Tooling with mise & hk**: Hermetic developer toolchains and git hooks configured out of the box.
 
 ---
 
 ## Local Development Setup
 
-This project uses **[mise](https://mise.jdx.dev/)** for managing developer CLI tools and task execution, and **[prek](https://github.com/jdx/prek)** for running pre-commit hooks.
+This project uses **[mise](https://mise.jdx.dev/)** for managing developer CLI tools and task execution, and **[hk](https://github.com/jdx/hk)** for managing and running git hooks.
 
 ### Prerequisites
 
@@ -27,22 +27,22 @@ Ensure you have `mise` and Docker installed on your machine.
 
 ### Tooling & Hook Installation
 
-Install required CLI tools (`actionlint`, `hadolint`, `shellcheck`, `zizmor`, `helm`, `trivy`, `gitleaks`) and set up git hooks with a single task:
+Install required CLI tools (`actionlint`, `hadolint`, `shellcheck`, `zizmor`, `helm`, `trivy`, `betterleaks`, `hk`, `pkl`, `tombi`, `yamllint`, `addlicense`) and set up git hooks with a single task:
 
 ```bash
 mise run install
 ```
 
-This runs `prek install` to set up the Git hook in `.git/hooks/pre-commit`.
+This runs `hk install --mise` to set up the Git hooks in `.git/hooks/pre-commit` and `.git/hooks/commit-msg`.
 
 ### Available mise Tasks
 
-The following tasks are defined in [`mise.toml`](file:///Users/josephking/Code/oci/oci-mysql/mise.toml):
+The following tasks are defined in [`mise.toml`](mise.toml):
 
 | Task | Command | Description |
 |------|---------|-------------|
-| `mise run install` | `prek install` | Install Git pre-commit hooks. |
-| `mise run prek` | `prek run --all-files` | Run all pre-commit hooks across the repository. |
+| `mise run install` | `hk install --mise` | Install Git hooks (`pre-commit` and `commit-msg`). |
+| `mise run hk` (alias `check`) | `hk check --all` | Run all checks across the repository. |
 | `mise run build` | `docker buildx build ...` | Build the local test container image for `linux/amd64`. |
 | `mise run compose` | `docker compose up -d --build` | Start the local container environment using Docker Compose. |
 | `mise run trivy-fs` | `trivy fs .` | Scan local repository filesystem for security vulnerabilities. |
@@ -50,66 +50,51 @@ The following tasks are defined in [`mise.toml`](file:///Users/josephking/Code/o
 
 ---
 
-## Pre-Commit Hooks (prek)
+## Git Hooks (hk)
 
-Local checks are configured in [`prek.toml`](file:///Users/josephking/Code/oci/oci-mysql/prek.toml) to catch issues before pushing code:
+Local checks and hooks are configured in [`hk.pkl`](hk.pkl) using [Pkl](https://pkl-lang.org/) to catch issues before committing and pushing code:
 
 - **Formatting & Sanitation**:
-  - Trailing whitespace removal
-  - End-of-file fixing
-  - Syntax checks for YAML, TOML, JSON, and XML
-  - Merge conflict and large file detection
-  - Branch protection (blocks accidental direct commits to `main` or `master`)
+  - Trailing whitespace removal (`trailing-whitespace`)
+  - Newline normalization (`newlines`)
+  - Syntax and format checks for JSON (`jq`), XML (`xmllint`), TOML (`tombi`, `tombi-format`), and YAML (`yamllint`)
+  - Merge conflict and large file detection (`check-merge-conflict`, `check-added-large-files`)
+  - Submodule prevention (`forbid-submodules`)
+  - Branch protection (`no-commit-to-branch` blocks direct commits to `main` or `master`)
+  - Pkl configuration evaluation (`pkl`)
 - **Commit Standards**:
-  - `commitlint`: Enforces Conventional Commits on commit messages (`feat:`, `fix:`, `ci:`, etc.).
+  - `commit-msg` hook enforces Conventional Commits (`check_conventional_commit`).
 - **Security & Licensing**:
-  - `gitleaks`: Prevents secrets, keys, and tokens from being committed.
+  - `betterleaks`: Detects leaked secrets, passwords, and tokens (supports `# betterleaks:allow` inline exclusions).
   - `addlicense`: Ensures proper license headers are present.
 - **Linters**:
-  - `hadolint`: Lints [`Dockerfile`](file:///Users/josephking/Code/oci/oci-mysql/Dockerfile).
+  - `hadolint`: Lints [`Dockerfile`](Dockerfile).
   - `shellcheck`: Lints shell scripts.
   - `actionlint`: Validates GitHub Actions workflow files.
   - `zizmor`: Audits GitHub Actions workflows for security flaws.
-  - `helm-lint`: Validates the Helm chart templates and values.
+  - `yamllint`: Strict YAML linting across workflows, Docker Compose, and Helm values.
+  - `helm-lint`: Validates Helm chart templates and values (`helm lint chart/`).
 
-To run hooks manually across all files:
+To run hooks and checks manually across all files:
 
 ```bash
-mise run prek
+mise run hk
+# or
+mise run check
 ```
 
 ---
 
 ## Continuous Integration & Delivery (CI/CD)
 
-The repository uses automated GitHub Actions workflows in [`.github/workflows`](file:///Users/josephking/Code/oci/oci-mysql/.github/workflows) leveraging reusable workflow templates from `joeckr/ci-templates`:
+The repository uses automated GitHub Actions workflows in [`.github/workflows`](.github/workflows) leveraging reusable workflow templates from `joeckr/ci-templates`:
 
-### Quality & Linting Workflows
-
-| Workflow | Trigger | Description |
-|----------|---------|-------------|
-| **Hadolint** (`hadolint.yml`) | Push / PR | Lints [`Dockerfile`](file:///Users/josephking/Code/oci/oci-mysql/Dockerfile) using Hadolint. |
-| **ShellCheck** (`shellcheck.yml`) | Push / PR | Analyzes shell scripts for syntax and POSIX compliance. |
-| **Actionlint** (`actionlint.yml`) | Push / PR | Validates GitHub Actions workflows syntax and best practices. |
-| **Zizmor** (`zizmor.yml`) | Push / PR | Scans workflows for security risks and uploads SARIF reports. |
-
-### Security & Compliance Workflows
-
-| Workflow | Trigger | Description |
-|----------|---------|-------------|
-| **Gitleaks** (`gitleaks.yml`) | Push / PR | Scans commits and repository contents for leaked secrets. |
-| **Commitlint** (`commitlint.yml`) | Push / PR | Enforces Conventional Commit specifications on pull requests and commits. |
-
-### Build, Package & Release Workflows
-
-| Workflow | Trigger | Description |
-|----------|---------|-------------|
-| **Matrix Build Test** (`test_build.yml`) | PR | Tests building container images across all versions in [`versions.json`](file:///Users/josephking/Code/oci/oci-mysql/versions.json) with `dry-run: true`. |
-| **Matrix Build & Publish** (`build.yml`) | Push `main` / tags | Builds multi-platform images for all versions in [`versions.json`](file:///Users/josephking/Code/oci/oci-mysql/versions.json) and publishes to GHCR. |
-| **Test Helm Chart** (`test_helm.yml`) | PR | Validates and dry-run packages the Helm chart located in [`chart/`](file:///Users/josephking/Code/oci/oci-mysql/chart). |
-| **Publish Helm Chart** (`helm.yml`) | Push `main` / tags | Packages and publishes the Helm chart to GitHub Container Registry (GHCR). |
-| **Test Semantic Release** (`test_semantic.yml`) | PR | Dry-run verification of semantic versioning and release notes. |
-| **Semantic Release** (`semantic.yml`) | Push `main` | Creates GitHub releases, changelog updates, and version tags automatically. |
+| Workflow | File | Trigger | Jobs / Description |
+|----------|------|---------|---------------------|
+| **Lint Scan** | [`lint.yml`](.github/workflows/lint.yml) | Push / PR (`main`) | Runs `actionlint`, `commitlint`, `hadolint` (Dockerfile), and `shellcheck`. |
+| **Security Audit** | [`security.yml`](.github/workflows/security.yml) | Push / PR (`main`) | Runs `betterleaks` secret scanning and `zizmor` workflow security audit (with SARIF upload). |
+| **TEST Release** | [`test_release.yml`](.github/workflows/test_release.yml) | PR (`main`) | Runs dry-run testing for matrix image builds across [`versions.json`](versions.json), Helm chart packaging, and semantic releases. |
+| **Release** | [`release.yml`](.github/workflows/release.yml) | Push (`main`) / Dispatch | Generates semantic version release and changelog, builds & publishes multi-platform container images to GHCR across all supported versions, and publishes the Helm chart to GHCR. |
 
 ---
 
@@ -165,3 +150,13 @@ helm lint chart/
 # Install chart locally
 helm install my-mysql ./chart -f chart/values.yaml
 ```
+
+## Support
+
+If you find this project useful, consider supporting my work on [Ko-fi](https://ko-fi.com/joeckr):
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/joeckr)
+
+## License
+
+Please refer to the `LICENSE` file for details.
