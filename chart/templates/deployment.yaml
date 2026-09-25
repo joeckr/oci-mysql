@@ -14,15 +14,10 @@ spec:
       labels:
         app: {{ .Values.mysql.app }}
     spec:
+      {{- with .Values.mysql.podSecurityContext }}
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-        {{- if and (not .Values.mysql.openshift) (not (.Capabilities.APIVersions.Has "security.openshift.io/v1")) }}
-        {{- if .Values.mysql.fsGroup }}
-        fsGroup: {{ .Values.mysql.fsGroup }}
-        {{- end }}
-        {{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       automountServiceAccountToken: false
       volumes:
         - name: mysql-storage
@@ -35,11 +30,10 @@ spec:
         {{- end }}
       containers:
         - name: {{ .Values.mysql.name }}
+          {{- with .Values.mysql.securityContext }}
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           image: "{{ .Values.mysql.image }}:{{ .Values.mysql.tag }}"
           imagePullPolicy: {{ .Values.mysql.pullPolicy }}
           ports:

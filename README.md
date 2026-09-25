@@ -47,19 +47,17 @@ The following tasks are defined in [`mise.toml`](mise.toml):
 | `mise run hk` (alias `check`) | `hk check --all` | Run all checks across the repository. |
 | `mise run compose` | `podman compose up -d --build` | Start local container environment using Podman Compose. |
 | `mise run down` | `podman compose down` | Stop local Podman Compose stack. |
-| `mise run compose-up` | `podman compose -f compose.upstream.yml up -d` | Run unmodified upstream baseline container. |
-| `mise run down-up` | `podman compose -f compose.upstream.yml down` | Stop upstream baseline container stack. |
 | `mise run logs` | `podman compose logs -f` | Follow Podman Compose logs. |
 | `mise run play` | `podman play kube rendered.yaml` | Test Helm chart manifests locally with Podman Play Kube. |
-| `mise run downplay` | `podman play kube rendered.yaml --down` | Stop and tear down Podman Play Kube pods. |
-| `mise run helm-dep` | `helm dependency build chart/` | Build Helm chart dependencies. |
-| `mise run helm-lint` | `helm lint chart/` | Lint the Helm chart. |
-| `mise run helm-template` | `helm template test chart/ > rendered.yaml` | Render Helm chart templates to `rendered.yaml`. |
-| `mise run helm-install` | `helm install test chart/` | Install the Helm chart to the current Kubernetes cluster. |
-| `mise run helm-uninstall` | `helm uninstall test` | Uninstall the Helm chart release from the cluster. |
+| `mise run play-d` | `podman play kube rendered.yaml --down` | Stop and tear down Podman Play Kube pods. |
+| `mise run helm-d` | `helm dependency build chart/` | Build Helm chart dependencies. |
+| `mise run helm-l` | `helm lint chart/` | Lint the Helm chart. |
+| `mise run helm-t` | `helm template test chart/ > rendered.yaml` | Render Helm chart templates to `rendered.yaml`. |
+| `mise run helm-i` | `helm install test chart/` | Install the Helm chart to the current Kubernetes cluster. |
+| `mise run helm-u` | `helm uninstall test` | Uninstall the Helm chart release from the cluster. |
 | `mise run build` | `podman buildx build --platform linux/amd64 -t ghcr.io/joeckr/mysql:test . --load` | Build local test container image for `linux/amd64`. |
 | `mise run trivy-fs` | `trivy fs .` | Scan local repository filesystem for security vulnerabilities. |
-| `mise run trivy-image` | `trivy image ghcr.io/joeckr/mysql:test` | Build image and run Trivy vulnerability scan on container. |
+| `mise run trivy-i` | `trivy image ghcr.io/joeckr/mysql:test` | Build image and run Trivy vulnerability scan on container. |
 
 ---
 
@@ -228,12 +226,10 @@ The [`compose.upstream.yml`](compose.upstream.yml) configuration runs the origin
 
 ```sh
 # Start upstream container
-mise run compose-up
-# or: podman compose -f compose.upstream.yml up -d
+podman compose -f compose.upstream.yml up -d
 
 # Stop upstream container
-mise run down-up
-# or: podman compose -f compose.upstream.yml down
+podman compose -f compose.upstream.yml down
 ```
 
 **Why test upstream?**
@@ -287,11 +283,11 @@ Before deploying to an actual Kubernetes cluster, you can test the rendered Kube
 mise run play
 
 # Teardown the played pod and resources
-mise run downplay
+mise run play-d
 ```
 
 **How `mise run play` works:**
-1. Triggers the dependent task `mise run helm-template`, which executes:
+1. Triggers the dependent task `mise run helm-t`, which executes:
    ```sh
    helm dependency build chart/
    helm template test chart/ > rendered.yaml
@@ -317,13 +313,13 @@ podman logs -f mysql-pod-mysql
 
 **Teardown:**
 ```sh
-mise run downplay
+mise run play-d
 # or: podman play kube rendered.yaml --down
 ```
 
 ---
 
-### Tier 4: Cluster Deployment & Testing on Talos Linux (`mise run helm-install`)
+### Tier 4: Cluster Deployment & Testing on Talos Linux (`mise run helm-i`)
 
 The final phase validates the workload on a live **Talos Linux** Kubernetes cluster. This tests real-world Pod Security Admission (PSA) enforcement, CSI storage provisioning, network policies, and database startup.
 
@@ -343,15 +339,16 @@ mise run build
 
 Configure `chart/values.yaml` for Talos Linux:
 - **StorageClass**: If your Talos cluster uses a specific CSI storage provisioner (e.g., `local-path`, `mayastor`, `ceph-block`), configure `mysql.storageClass` in `values.yaml` or leave it empty `""` to use the cluster's default StorageClass.
+- **Security Context & fsGroup**: Under `mysql.podSecurityContext`, `fsGroup: 1031` ensures mounted storage has permissions accessible by the container user in vanilla Kubernetes / Talos Linux. If deploying to OpenShift, remove or comment out `fsGroup` as OpenShift's SCC allocates fsGroup dynamically.
 
 #### 2. Linting & Template Validation
 
 ```sh
 # Lint the chart for syntax and formatting errors
-mise run helm-lint
+mise run helm-l
 
 # Inspect the rendered manifests before installation
-mise run helm-template
+mise run helm-t
 cat rendered.yaml
 ```
 
@@ -359,7 +356,7 @@ cat rendered.yaml
 
 Install the Helm chart release:
 ```sh
-mise run helm-install
+mise run helm-i
 # or: helm install test chart/
 ```
 
@@ -398,7 +395,7 @@ kubectl port-forward svc/mysql 3306:3306
 
 When testing is complete, clean up the release:
 ```sh
-mise run helm-uninstall
+mise run helm-u
 # or: helm uninstall test
 ```
 
