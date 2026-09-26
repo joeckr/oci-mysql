@@ -1,8 +1,10 @@
-mysql:
+app:
   name: mysql
-  app: mysql
   replicaCount: 1
-  resources: {limits: {cpu: 100m, memory: 200Mi}}
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
   image: ghcr.io/joeckr/mysql
   tag: latest
   pullPolicy: Always
