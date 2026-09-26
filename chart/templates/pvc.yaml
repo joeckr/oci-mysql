@@ -3,13 +3,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
   labels:
-    app: {{ .Values.mysql.app }}
+    app: {{ .Values.app.name }}
 spec:
   accessModes:
-    - {{ .Values.mysql.storageAccessMode }}
+    - {{ .Values.app.storageAccessMode }}
   resources:
     requests:
-      storage: {{ .Values.mysql.storageSize }}
-  {{- if .Values.mysql.storageClass }}
-  storageClassName: {{ .Values.mysql.storageClass | quote }}
+      storage: {{ .Values.app.storageSize }}
+  {{- if .Values.app.storageClass }}
+  storageClassName: {{ .Values.app.storageClass | quote }}
   {{- end }}
