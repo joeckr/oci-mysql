@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.mysql.name }}
+  name: {{ .Values.app.name }}
   labels:
-    app: {{ .Values.mysql.app }}
+    app: {{ .Values.app.name }}
 spec:
-  replicas: {{ .Values.mysql.replicaCount }}
+  replicas: {{ .Values.app.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Values.mysql.app }}
+      app: {{ .Values.app.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.mysql.app }}
+        app: {{ .Values.app.name }}
     spec:
-      {{- with .Values.mysql.podSecurityContext }}
+      {{- with .Values.app.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -29,25 +29,25 @@ spec:
             name: mysql-schema
         {{- end }}
       containers:
-        - name: {{ .Values.mysql.name }}
-          {{- with .Values.mysql.securityContext }}
+        - name: {{ .Values.app.name }}
+          {{- with .Values.app.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.mysql.image }}:{{ .Values.mysql.tag }}"
-          imagePullPolicy: {{ .Values.mysql.pullPolicy }}
+          image: "{{ .Values.app.image }}:{{ .Values.app.tag }}"
+          imagePullPolicy: {{ .Values.app.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.mysql.port }}
-              name: {{ .Values.mysql.name }}
+            - containerPort: {{ .Values.app.port }}
+              name: {{ .Values.app.name }}
           env:
             - name: MYSQL_DATABASE
-              value: {{ .Values.mysql.db | quote }}
+              value: {{ .Values.app.db | quote }}
             - name: MYSQL_USER
-              value: {{ .Values.mysql.user | quote }}
+              value: {{ .Values.app.user | quote }}
             - name: MYSQL_PASSWORD
-              value: {{ .Values.mysql.password | quote }}
+              value: {{ .Values.app.password | quote }}
             - name: MYSQL_ROOT_PASSWORD
-              value: {{ .Values.mysql.rootPassword | quote }}
+              value: {{ .Values.app.rootPassword | quote }}
           volumeMounts:
             - name: mysql-storage
               mountPath: /var/lib/mysql
@@ -56,3 +56,7 @@ spec:
               mountPath: /docker-entrypoint-initdb.d/schema.sql
               subPath: schema.sql
             {{- end }}
+          {{- with .Values.app.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
