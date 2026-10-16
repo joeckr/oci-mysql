@@ -1,5 +1,5 @@
 apiVersion: v2
-name: chart
+name: mysql
 description: A Helm chart for joeckr mysql
 type: application
 version: 0.2.3
