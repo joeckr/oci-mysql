@@ -1,4 +1,4 @@
-FROM docker.io/library/mysql:9.7-oracle
+FROM docker.io/library/mysql:26.7-oracle
 
 USER 0
 
