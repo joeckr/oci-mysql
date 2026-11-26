@@ -1,6 +1,4 @@
-ARG VERSION=9
-ARG REGISTRY=docker.io/library
-FROM $REGISTRY/mysql:$VERSION-oracle
+FROM docker.io/library/mysql:9.7-oracle
 
 USER 0
 

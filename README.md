@@ -2,7 +2,7 @@
 
 This repository provides a rootless, hardened MySQL container image and Helm deployment, designed to run securely under arbitrary user IDs (rootless UID/GID) while maintaining compatibility with standard MySQL entrypoints in hardened Kubernetes environments.
 
-The repository also supports multi-version image builds using GitHub Actions matrix jobs driven by [`versions.json`](versions.json), as well as Helm chart packaging and local development workflows.
+The repository also provides automated semantic-versioned container image builds, Helm chart packaging, and local development workflows.
 
 ---
 
@@ -11,10 +11,10 @@ The repository also supports multi-version image builds using GitHub Actions mat
 - **Rootless Image Builds**: Engineered to build cleanly in unprivileged, rootless container builders without requiring host root or privileged daemon sockets.
 - **Rootless & Hardened Image**: Runs as non-root user (`USER 1031`) with root group permissions (`GID 0`) across MySQL data, run, log, and initialization directories.
 - **Hardened Kubernetes Compatibility**: Fully compliant with upstream Kubernetes Pod Security Standards (`restricted` PSS/PSA level) for hardened cluster environments.
-- **Multi-Version Build Matrix**: Automatically builds supported MySQL versions defined in [`versions.json`](versions.json) via GitHub Actions.
+- **Semantic Release Builds**: Automatically builds and publishes multi-arch container images tagged with the semantic release version and `latest` via GitHub Actions.
 - **Schema Initialization**: Auto-mounts [`schema.sql`](schema.sql) into `/docker-entrypoint-initdb.d/` for automatic first-run database initialization.
 - **Multiple Deployment Options**: Easily deployed via Docker Compose or Helm chart.
-- **Automated CI/CD**: Centralized reusable workflows for linting, security scanning, dry-run PR testing, matrix builds, Helm publishing, and semantic releases.
+- **Automated CI/CD**: Centralized reusable workflows for linting, security scanning, dry-run PR testing, OCI image builds, Helm publishing, and semantic releases.
 - **Local Tooling with mise & hk**: Hermetic developer toolchains and git hooks configured out of the box with a multi-tier testing pipeline.
 
 ---
@@ -104,33 +104,12 @@ The repository uses automated GitHub Actions workflows in [`.github/workflows`](
 |----------|------|---------|---------------------|
 | **Lint Scan** | [`lint.yml`](.github/workflows/lint.yml) | Push / PR (`main`) | Runs `actionlint`, `commitlint`, `hadolint` (Dockerfile), and `shellcheck`. |
 | **Security Audit** | [`security.yml`](.github/workflows/security.yml) | Push / PR (`main`) | Runs `betterleaks` secret scanning and `zizmor` workflow security audit (with SARIF upload). |
-| **TEST Release** | [`test_release.yml`](.github/workflows/test_release.yml) | PR (`main`) | Runs dry-run testing for matrix image builds across [`versions.json`](versions.json), Helm chart packaging, and semantic releases. |
-| **Release** | [`release.yml`](.github/workflows/release.yml) | Push (`main`) / Dispatch | Generates semantic version release and changelog, builds & publishes multi-platform container images to GHCR across all supported versions, and publishes the Helm chart to GHCR. |
+| **TEST Release** | [`test_release.yml`](.github/workflows/test_release.yml) | PR (`main`) | Runs dry-run testing for OCI image builds, Helm chart packaging, and semantic releases. |
+| **Release** | [`release.yml`](.github/workflows/release.yml) | Push (`main`) / Dispatch | Generates semantic version release and changelog, builds & publishes multi-platform container images to GHCR tagged with the semantic release version and `latest`, and publishes the Helm chart to GHCR. |
 
 ---
 
 ## Configuration & Usage
-
-### Supported Versions
-
-Supported MySQL versions are defined in [`versions.json`](versions.json):
-
-```json
-[
-  {
-    "major": "9",
-    "upstream": "9.7",
-    "latest": true
-  },
-  {
-    "major": "8",
-    "upstream": "8.4",
-    "latest": false
-  }
-]
-```
-
-To add or update a supported MySQL version, modify [`versions.json`](versions.json). The CI matrix builder will automatically pick up the new configuration.
 
 ### Initial Schema
 

@@ -6,8 +6,9 @@ app:
       cpu: 100m
       memory: 200Mi
   image: ghcr.io/joeckr/mysql
-  tag: latest
-  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
   port: 3306
   db: mysql
   user: mysql
